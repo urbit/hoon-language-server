@@ -1,0 +1,5 @@
+build/
+dist/
+hoon_language_server.egg-info/
+**/*.swp
+**/*.swo

@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+
+# Adapted from:
+# https://github.com/palantir/python-jsonrpc-server/blob/409eb0c/examples/langserver.py
+
+import requests
+import json
+import logging
+import sys
+
+from pyls_jsonrpc import dispatchers, endpoint
+from pyls_jsonrpc.streams import JsonRpcStreamReader, JsonRpcStreamWriter
+
+logging.basicConfig(level=logging.INFO, filename='/tmp/hoon-language-server.log', filemode='w')
+log = logging.getLogger(__name__)
+
+def stdio():
+    if sys.version_info >= (3, 0):
+        # pylint: disable=no-member
+        stdin, stdout = sys.stdin.buffer, sys.stdout.buffer
+    else:
+        stdin, stdout = sys.stdin, sys.stdout
+
+    return stdin, stdout
+
+
+class LanguageServer(dispatchers.MethodDispatcher):
+    """Implement a JSON RPC method dispatcher for the language server protocol."""
+
+    def __init__(self, rx, tx):
+        # Endpoint is lazily set after construction
+        self._jsonrpc_stream_reader = JsonRpcStreamReader(rx)
+        self._jsonrpc_stream_writer = JsonRpcStreamWriter(tx)
+        self._endpoint = endpoint.Endpoint(self,
+            self._jsonrpc_stream_writer.write, max_workers=1)
+        data={'password': 'lidlut-tabwed-pillex-ridrup'} # fakezod
+        self._requests_session = requests.Session()
+        self._requests_session.post('http://localhost:8080/~/login', data=data)
+
+    def _hook(self, data):
+      r = self._requests_session.post('http://localhost:8080/~language-server-protocol',
+          data=json.dumps(data))
+      try:
+          log.info("good hook %s", r.json())
+          return r.json()
+      except json.decoder.JSONDecodeError:
+          log.info("broked hook %s", r.text)
+          return None
+
+    def start(self):
+        self._jsonrpc_stream_reader.listen(self._endpoint.consume)
+
+    def m_initialize(self, rootUri=None, **kwargs):
+        log.info('Got initialize params: %s', kwargs)
+        return {'capabilities': {
+            'textDocumentSync': {
+                'openClose': True,
+                'change': 2,  # send incremental updates
+                'willSave': True,
+            },
+            'definitionProvider': True,
+            'completionProvider': {
+                'resolveProvider': False,  # We know everything ahead of time
+                'triggerCharacters': [
+                    '-', '+', '^', '!', '@', '$', '%', '.',
+                    '%', '&', '*', '/', ',', '>', '<', '~',
+                    '|', '=', ';', ':', '_',
+                ]
+            },
+        }}
+
+    def m_initialized(self, **kwargs):
+        log.info("Got initialized params: %s", kwargs)
+        pass
+
+    def m_text_document__did_open(self, textDocument=None, **_kwargs):
+        log.info("Opened text document %s", textDocument['uri'])
+        log.info(self._hook({'sync': [{'text': textDocument['text']}]}))
+
+    def m_text_document__will_save(self, textDocument=None, **_kwargs):
+        log.info("saving %s", textDocument['uri'])
+        # log.info(self._hook({'sync': textDocument['text']}))
+
+    def m_text_document__did_change(self, textDocument=None, **_kwargs):
+        log.info("changing %s", textDocument['uri'])
+        log.info("diff: %s", _kwargs)
+        self._hook({'sync': _kwargs['contentChanges']})
+
+    def m_text_document__completion(self, textDocument=None,
+            position=None, **kwargs):
+        log.info("Got compl params: %s %s %s", textDocument, position,
+            kwargs)
+        res = self._hook({'completion': position})
+        if res['good']:
+            self._endpoint.notify('textDocument/publishDiagnostics', {
+                'uri': textDocument['uri'],
+                'diagnostics': []
+            })
+            return res['result']
+        else:
+            self._endpoint.notify('textDocument/publishDiagnostics', {
+                'uri': textDocument['uri'],
+                'diagnostics': res['diagnostics']
+            })
+            return None
+
+    def m_text_document__definition(self, textDocument=None,
+            position=None, **kwargs):
+        log.info("Got def params: %s %s %s", textDocument, position,
+            kwargs)
+        return {
+            'uri': textDocument['uri'],
+            'range': {
+              'start': { 'line': 1, 'character': '3' },
+              'end': { 'line': 1, 'character': '5' }
+            }
+        }
+
+
+if __name__ == "__main__":
+    stdin, stdout = stdio()
+    server = LanguageServer(stdin,stdout)
+    server.start()
