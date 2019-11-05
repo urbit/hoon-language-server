@@ -37,9 +37,9 @@ class LanguageServer(dispatchers.MethodDispatcher):
         self._requests_session = requests.Session()
         self._requests_session.post('http://localhost:8080/~/login', data=data)
 
-    def _hook(self, data):
+    def _hook(self, uri, data):
       r = self._requests_session.post('http://localhost:8080/~language-server-protocol',
-          data=json.dumps(data))
+              data=json.dumps({'uri': uri, 'data': data}))
       try:
           log.info("good hook %s", r.json())
           return r.json()
@@ -75,7 +75,10 @@ class LanguageServer(dispatchers.MethodDispatcher):
 
     def m_text_document__did_open(self, textDocument=None, **_kwargs):
         log.info("Opened text document %s", textDocument['uri'])
-        log.info(self._hook({'sync': [{'text': textDocument['text']}]}))
+        log.info(self._hook(
+            textDocument['uri'],
+            {'sync': [{'text': textDocument['text']}]}
+        ))
 
     def m_text_document__will_save(self, textDocument=None, **_kwargs):
         log.info("saving %s", textDocument['uri'])
@@ -84,13 +87,16 @@ class LanguageServer(dispatchers.MethodDispatcher):
     def m_text_document__did_change(self, textDocument=None, **_kwargs):
         log.info("changing %s", textDocument['uri'])
         log.info("diff: %s", _kwargs)
-        self._hook({'sync': _kwargs['contentChanges']})
+        self._hook(
+            textDocument['uri'],
+            {'sync': _kwargs['contentChanges']}
+        )
 
     def m_text_document__completion(self, textDocument=None,
             position=None, **kwargs):
         log.info("Got compl params: %s %s %s", textDocument, position,
             kwargs)
-        res = self._hook({'completion': position})
+        res = self._hook(textDocument['uri'], {'completion': position})
         if res['good']:
             self._endpoint.notify('textDocument/publishDiagnostics', {
                 'uri': textDocument['uri'],

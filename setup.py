@@ -3,7 +3,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 setuptools.setup(
     name='hoon-language-server',  
-    version='0.1',
+    version='0.1.1',
     scripts=['hoon-language-server'] ,
     author="Tlon",
     author_email="philip@tlon.io",
