@@ -8,11 +8,40 @@ import json
 import logging
 import sys
 
+from getopt import getopt, GetoptError
 from pyls_jsonrpc import dispatchers, endpoint
 from pyls_jsonrpc.streams import JsonRpcStreamReader, JsonRpcStreamWriter
 
 logging.basicConfig(level=logging.INFO, filename='/tmp/hoon-language-server.log', filemode='w')
 log = logging.getLogger(__name__)
+
+defaultConfig = {
+    'port': 8080
+}
+
+
+def bail():
+    "Print usage string and bail"
+    print('usage: %s [-p port]' % sys.argv[0])
+    sys.exit(2)
+
+def get_config():
+    "Parse command line args and return config"
+    try:
+        options, args = getopt(sys.argv[1:], 'p:', ['--port'])
+    except GetoptError:
+        bail()
+    config = defaultConfig.copy()
+    for option, arg in options:
+        if option in ('-p', '--port'):
+            try:
+                config['port'] = int(arg)
+            except ValueError:
+                bail()
+        else:
+            bail()
+    return config
+
 
 def stdio():
     if sys.version_info >= (3, 0):
@@ -27,18 +56,19 @@ def stdio():
 class LanguageServer(dispatchers.MethodDispatcher):
     """Implement a JSON RPC method dispatcher for the language server protocol."""
 
-    def __init__(self, rx, tx):
+    def __init__(self, rx, tx, config=defaultConfig):
         # Endpoint is lazily set after construction
         self._jsonrpc_stream_reader = JsonRpcStreamReader(rx)
         self._jsonrpc_stream_writer = JsonRpcStreamWriter(tx)
         self._endpoint = endpoint.Endpoint(self,
             self._jsonrpc_stream_writer.write, max_workers=1)
+        self._base_url = 'http://localhost:' + str(config['port'])
         data={'password': 'lidlut-tabwed-pillex-ridrup'} # fakezod
         self._requests_session = requests.Session()
-        self._requests_session.post('http://localhost:8080/~/login', data=data)
+        self._requests_session.post(self._base_url + '/~/login', data=data)
 
     def _hook(self, uri, data):
-      r = self._requests_session.post('http://localhost:8080/~language-server-protocol',
+      r = self._requests_session.post(self._base_url + '/~language-server-protocol',
               data=json.dumps({'uri': uri, 'data': data}))
       try:
           log.info("good hook %s", r.json())
@@ -125,5 +155,7 @@ class LanguageServer(dispatchers.MethodDispatcher):
 
 if __name__ == "__main__":
     stdin, stdout = stdio()
-    server = LanguageServer(stdin,stdout)
+    config = get_config()
+    print(config)
+    server = LanguageServer(stdin,stdout, config)
     server.start()
