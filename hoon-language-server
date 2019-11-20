@@ -83,10 +83,12 @@ class LanguageServer(dispatchers.MethodDispatcher):
     def m_initialize(self, rootUri=None, **kwargs):
         log.info('Got initialize params: %s', kwargs)
         return {'capabilities': {
+            'hoverProvider': True,
             'textDocumentSync': {
                 'openClose': True,
                 'change': 2,  # send incremental updates
                 'willSave': True,
+                'save': True
             },
             'definitionProvider': True,
             'completionProvider': {
@@ -103,6 +105,18 @@ class LanguageServer(dispatchers.MethodDispatcher):
         log.info("Got initialized params: %s", kwargs)
         pass
 
+    def m_shutdown(self, **kwargs):
+        log.info("Got shutdown request: %s", kwargs)
+        sys.exit(2)
+
+    def m_text_document__hover(self, textDocument=None, position=None, **_kwargs):
+        log.info("Hovering on text document %s at: %s", textDocument['uri'], position)
+        log.info(position)
+        res = self._hook(textDocument['uri'], {'hover': position})
+        log.info('hover responded: %s', res)
+        return res
+
+
     def m_text_document__did_open(self, textDocument=None, **_kwargs):
         log.info("Opened text document %s", textDocument['uri'])
         log.info(self._hook(
@@ -113,6 +127,23 @@ class LanguageServer(dispatchers.MethodDispatcher):
     def m_text_document__will_save(self, textDocument=None, **_kwargs):
         log.info("saving %s", textDocument['uri'])
         # log.info(self._hook({'sync': textDocument['text']}))
+
+
+    def m_text_document__did_save(self, textDocument=None, **_kwargs):
+        log.info("saved %s", textDocument['uri'])
+        res = self._hook(textDocument['uri'], {'commit': 1})
+        log.info("save res: %s", res)
+        if res['good']:
+            self._endpoint.notify('textDocument/publishDiagnostics', {
+                'uri': textDocument['uri'],
+                'diagnostics': []
+            })
+        else:
+            self._endpoint.notify('textDocument/publishDiagnostics', {
+                'uri': textDocument['uri'],
+                'diagnostics': res['diagnostics']
+            })
+
 
     def m_text_document__did_change(self, textDocument=None, **_kwargs):
         log.info("changing %s", textDocument['uri'])
