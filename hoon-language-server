@@ -7,6 +7,7 @@ import requests
 import json
 import logging
 import sys
+import time
 
 from getopt import getopt, GetoptError
 from pyls_jsonrpc import dispatchers, endpoint
@@ -16,19 +17,20 @@ logging.basicConfig(level=logging.INFO, filename='/tmp/hoon-language-server.log'
 log = logging.getLogger(__name__)
 
 defaultConfig = {
-    'port': 8080
+    'port': 8080,
+    'delay': 0
 }
 
 
 def bail():
     "Print usage string and bail"
-    print('usage: %s [-p port]' % sys.argv[0])
+    print('usage: %s [-p port] [-d ms_delay]' % sys.argv[0])
     sys.exit(2)
 
 def get_config():
     "Parse command line args and return config"
     try:
-        options, args = getopt(sys.argv[1:], 'p:', ['--port'])
+        options, args = getopt(sys.argv[1:], 'p:d:', ['--port', '--delay'])
     except GetoptError:
         bail()
     config = defaultConfig.copy()
@@ -36,6 +38,11 @@ def get_config():
         if option in ('-p', '--port'):
             try:
                 config['port'] = int(arg)
+            except ValueError:
+                bail()
+        elif option in ('-d', '--delay'):
+            try:
+                config['delay'] = int(arg)
             except ValueError:
                 bail()
         else:
@@ -131,6 +138,7 @@ class LanguageServer(dispatchers.MethodDispatcher):
 
     def m_text_document__did_save(self, textDocument=None, **_kwargs):
         log.info("saved %s", textDocument['uri'])
+        time.sleep(config['delay'] / 1000) # delay in ms
         res = self._hook(textDocument['uri'], {'commit': 1})
         log.info("save res: %s", res)
         if res['good']:
