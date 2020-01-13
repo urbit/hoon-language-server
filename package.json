@@ -1,0 +1,30 @@
+{
+	"name": "hoon-language-server",
+	"description": "LSP bridge for Hoon.",
+	"version": "0.1.0",
+	"author": "Tlon Corporation",
+	"license": "MIT",
+	"engines": {
+		"node": "*"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/urbit/hoon-language-server"
+	},
+	"bin": {
+		"hoon-language-server": "./bin/index.js"
+	},
+	"dependencies": {
+		"eventsource": "^1.0.7",
+		"lodash": "^4.17.15",
+		"pino": "^5.15.0",
+		"vscode-languageserver": "^5.2.1"
+	},
+	"scripts": {},
+	"devDependencies": {
+		"@types/eventsource": "^1.1.2",
+		"@types/lodash": "^4.14.149",
+		"@types/node": "^13.1.1",
+		"@types/pino": "^5.15.1"
+	}
+}
