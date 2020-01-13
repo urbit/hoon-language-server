@@ -1,4 +1,4 @@
-import { request } from "./util";
+import { request, Config } from "./util";
 import * as EventSource from "eventsource";
 
 export default class Channel {
@@ -13,7 +13,8 @@ export default class Channel {
   constructor(
     private cookies: string[],
     private url: string,
-    private logger: any
+    private logger: any,
+    private config: Config
   ) {
     //  unique identifier: current time and random number
     //
@@ -115,7 +116,6 @@ export default class Channel {
     return id;
   }
 
-
   //  unsubscribe to a specific subscription
   //
   unsubscribe(subscription: string) {
@@ -155,7 +155,8 @@ export default class Channel {
           "Content-Type": "application/json",
           "Content-Length": body.length,
           Cookie: this.cookies
-        }
+        },
+        port: this.config.port
       },
       body
     ).then(r => {
@@ -186,7 +187,7 @@ export default class Channel {
         } else if (obj.hasOwnProperty("err") && funcs) {
           funcs["fail"](obj.err);
         } else {
-          console.error("Invalid poke response: ", obj);
+          this.logger.warn("Invalid poke response: ", { response: obj });
         }
         this.outstandingPokes.delete(obj.id);
       } else if (obj.response == "subscribe") {
@@ -205,7 +206,7 @@ export default class Channel {
         funcs["quit"](obj);
         this.outstandingSubscriptions.delete(obj.id);
       } else {
-        console.error("Unrecognized response: ", e);
+        this.logger.warn("Unrecognized response", { event: e });
       }
     };
 
@@ -216,7 +217,7 @@ export default class Channel {
   }
 
   channelURL() {
-    return this.url + "/~/channel/" + this.uid;
+    return this.url + ":" + this.config.port + "/~/channel/" + this.uid;
   }
 
   nextId() {

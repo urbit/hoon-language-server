@@ -18,13 +18,15 @@
 		"eventsource": "^1.0.7",
 		"lodash": "^4.17.15",
 		"pino": "^5.15.0",
-		"vscode-languageserver": "^5.2.1"
+		"vscode-languageserver": "^5.2.1",
+		"yargs": "^15.1.0"
 	},
 	"scripts": {},
 	"devDependencies": {
 		"@types/eventsource": "^1.1.2",
 		"@types/lodash": "^4.14.149",
 		"@types/node": "^13.1.1",
-		"@types/pino": "^5.15.1"
+		"@types/pino": "^5.15.1",
+		"@types/yargs": "^15.0.0"
 	}
 }

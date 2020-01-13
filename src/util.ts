@@ -1,5 +1,8 @@
 import * as http from "http";
-
+export interface Config {
+  port: number;
+  delay: number;
+}
 interface HttpResponse {
   req: http.ClientRequest;
   res: http.IncomingMessage;

@@ -3,9 +3,9 @@ import { NotificationMessage, RequestMessage } from "vscode-languageserver";
 import * as pino from "pino";
 import { uniqueId } from "lodash";
 import * as qs from "querystring";
-import { wait } from "./util";
+import * as yargs from "yargs";
 
-import { request } from "./util";
+import { wait, request, Config } from "./util";
 import Channel from "./channel";
 
 const logger = pino(
@@ -21,17 +21,17 @@ enum MARKS {
   REQUEST = "language-server-rpc-request",
   NOTIFICATION = "language-server-rpc-notification",
   RESPONSE = "language-server-rpc-response"
-};
+}
 
 interface RequestContinuation {
-  (result: any): void
+  (result: any): void;
 }
 
 class Server {
   connection: rpc.MessageConnection;
   subscription: number | null = null;
   outstandingRequests: Map<string, RequestContinuation> = new Map();
-  constructor(private channel: Channel) {
+  constructor(private channel: Channel, private config: Config) {
     this.connection = rpc.createMessageConnection(
       new rpc.StreamMessageReader(process.stdin),
       new rpc.StreamMessageWriter(process.stdout)
@@ -113,7 +113,7 @@ class Server {
     logger.debug({ method, params });
     if (method === "textDocument/didSave") {
       wait(1000).then(() => {
-        logger.debug('Delayed didSave')
+        logger.debug("Delayed didSave");
         this.poke(MARKS.NOTIFICATION, { jsonrpc: "2.0", method, params });
       });
     }
@@ -127,12 +127,11 @@ class Server {
     if (method === "initialize") {
       return this.initialise();
     } else {
-      logger.info({ message: `caught request`, id })
-      this.poke(MARKS.REQUEST, { jsonrpc: '2.0', method, params, id })
+      logger.info({ message: `caught request`, id });
+      this.poke(MARKS.REQUEST, { jsonrpc: "2.0", method, params, id });
       return this.waitOnResponse(id).then(r => {
-        logger.info({ message: `returning request`, id, r })
+        logger.info({ message: `returning request`, id, r });
         return r;
-
       });
     }
   }
@@ -147,7 +146,7 @@ class Server {
     return new Promise((resolve, reject) =>
       this.channel.poke(ship, app, mark, message, resolve, reject)
     ).catch(e => {
-      logger.warn("Failed to poke", { error: e})
+      logger.warn("Failed to poke", { error: e });
     });
   }
 
@@ -158,12 +157,11 @@ class Server {
 
     if (update.hasOwnProperty("id")) {
       const response = this.outstandingRequests.get(update.id);
-      if(response) {
-        response(update.result)
+      if (response) {
+        response(update.result);
       } else {
-        logger.warn("Unrecognised request", { update })
+        logger.warn("Unrecognised request", { update });
       }
-
     } else {
       this.connection.sendNotification(update.method, update.params);
     }
@@ -179,15 +177,35 @@ class Server {
 }
 
 let data = { password: "lidlut-tabwed-pillex-ridrup" };
-request(url + "/~/login", { method: "post" }, qs.stringify(data)).then(
-  ({ res }) => {
-    logger.info({
-      message: "Got cookie",
-      cookie: res.headers["set-cookie"] || "no-cookie"
-    });
-    const channel = new Channel(res.headers["set-cookie"] || [], url, logger);
-    const server = new Server(channel);
 
-    server.serve();
+const config: Config = yargs.options({
+  port: {
+    alias: "p",
+    default: 8080,
+    description: "HTTP port of the running urbit"
+  },
+  delay: {
+    alias: "d",
+    default: 0
   }
-);
+}).argv;
+
+request(
+  url + "/~/login",
+  { method: "post", port: config.port },
+  qs.stringify(data)
+).then(({ res }) => {
+  logger.info({
+    message: "Got cookie",
+    cookie: res.headers["set-cookie"] || "no-cookie"
+  });
+  const channel = new Channel(
+    res.headers["set-cookie"] || [],
+    url,
+    logger,
+    config
+  );
+  const server = new Server(channel, config);
+
+  server.serve();
+});
