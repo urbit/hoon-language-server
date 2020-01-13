@@ -112,7 +112,7 @@ class Server {
   onNotification(method: string, params: any[]) {
     logger.debug({ method, params });
     if (method === "textDocument/didSave") {
-      wait(1000).then(() => {
+      wait(this.config.delay).then(() => {
         logger.debug("Delayed didSave");
         this.poke(MARKS.NOTIFICATION, { jsonrpc: "2.0", method, params });
       });
