@@ -18,7 +18,7 @@
 		"eventsource": "^1.0.7",
 		"lodash": "^4.17.15",
 		"pino": "^5.15.0",
-		"urbit-airlock": "0.0.1",
+		"urbit-airlock": "0.0.2",
 		"vscode-languageserver": "^5.2.1",
 		"yargs": "^15.1.0"
 	},

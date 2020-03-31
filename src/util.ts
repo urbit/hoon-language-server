@@ -2,7 +2,11 @@ import * as http from "http";
 export interface Config {
   port: number;
   delay: number;
+  url: string;
+  code: string;
+  ship: string;
 }
+
 interface HttpResponse {
   req: http.ClientRequest;
   res: http.IncomingMessage;

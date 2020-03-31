@@ -14,20 +14,19 @@ const logger = pino(
   { level: "trace" },
   pino.destination("/tmp/hoon-language-server.log")
 );
-const url = "http://localhost";
-const app = "language-server";
-const path = "/primary";
-const ship = "zod";
 
 interface RequestContinuation {
   (result: any): void;
 }
 
+const app = "language-server";
+const path = "/primary";
+
 class Server {
   connection: rpc.MessageConnection;
   subscription: number | null = null;
   outstandingRequests: Map<string, RequestContinuation> = new Map();
-  constructor(private channel: Channel, private config: Config) {
+  constructor(private channel: Channel, private delay: number) {
     this.connection = rpc.createMessageConnection(
       new rpc.StreamMessageReader(process.stdin),
       new rpc.StreamMessageWriter(process.stdout)
@@ -106,7 +105,7 @@ class Server {
   onNotification(method: string, params: any[]) {
     logger.debug({ method, params });
     if (method === "textDocument/didSave") {
-      wait(this.config.delay).then(() => {
+      wait(this.delay).then(() => {
         logger.debug("Delayed didSave");
         this.pokeNotification({ jsonrpc: "2.0", method, params });
       });
@@ -116,7 +115,6 @@ class Server {
 
   onRequest(method: string, params: any[]) {
     const id = uniqueId();
-    logger.debug({ method });
 
     if (method === "initialize") {
       return this.initialise();
@@ -170,28 +168,40 @@ class Server {
   }
 }
 
-let password = "lidlut-tabwed-pillex-ridrup";
-
-const _config: Config = yargs.options({
-  port: {
-    alias: "p",
-    default: 80,
-    description: "HTTP port of the running urbit"
-  },
-  delay: {
-    alias: "d",
-    default: 0
-  }
-}).argv;
-
 (async function main() {
-  const connection = await connect(ship, url, 80, password);
+  const { ship, url, code: password, port, delay }: Config = yargs.options({
+    port: {
+      alias: "p",
+      default: 80,
+      description: "HTTP port of the running urbit"
+    },
+    delay: {
+      alias: "d",
+      default: 0,
+      description: "Delay for running didSave events"
+    },
+    url: {
+      alias: "u",
+      default: "http://localhost",
+      description: "URL of the running urbit"
+    },
+    ship: {
+      alias: "s",
+      default: "zod",
+      description: "@p of the running urbit, without leading sig"
+    },
+    code: {
+      alias: "c",
+      default: "lidlut-tabwed-pillex-ridrup",
+      description: "+code of the running urbit"
+    }
+  }).argv;
+
+  const connection = await connect(ship, url, port, password);
 
   const channel = new Channel(connection);
 
-  const config = { port: 80, delay: 500 };
-
-  const server = new Server(channel, config);
+  const server = new Server(channel, delay);
 
   server.serve();
 })();
