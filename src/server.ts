@@ -1,37 +1,32 @@
+import { REQUEST_MARK, RESPONSE_MARK, NOTIFICATION_MARK } from "./marks";
 import * as rpc from "vscode-jsonrpc";
 import { NotificationMessage, RequestMessage } from "vscode-languageserver";
-import * as pino from "pino";
+import pino from "pino";
 import { uniqueId } from "lodash";
 import * as qs from "querystring";
 import * as yargs from "yargs";
+import { Channel } from "urbit-airlock/lib/channel";
+import { connect } from "urbit-airlock/lib/setup";
 
 import { wait, request, Config } from "./util";
-import Channel from "./channel";
 
 const logger = pino(
   { level: "trace" },
   pino.destination("/tmp/hoon-language-server.log")
 );
-const url = "http://localhost";
-const app = "language-server";
-const path = "/primary";
-const ship = "zod";
-
-enum MARKS {
-  REQUEST = "language-server-rpc-request",
-  NOTIFICATION = "language-server-rpc-notification",
-  RESPONSE = "language-server-rpc-response"
-}
 
 interface RequestContinuation {
   (result: any): void;
 }
 
+const app = "language-server";
+const path = "/primary";
+
 class Server {
   connection: rpc.MessageConnection;
   subscription: number | null = null;
   outstandingRequests: Map<string, RequestContinuation> = new Map();
-  constructor(private channel: Channel, private config: Config) {
+  constructor(private channel: Channel, private delay: number) {
     this.connection = rpc.createMessageConnection(
       new rpc.StreamMessageReader(process.stdin),
       new rpc.StreamMessageWriter(process.stdout)
@@ -96,14 +91,12 @@ class Server {
   serve() {
     // const onUpdate =
     // const onError = this.onSubscriptionErr.bind(this);
-    this.channel.subscribe(
-      ship,
-      app,
-      path,
-      e => this.onSubscriptionErr(e),
-      u => this.onSubscriptionUpdate(u),
-      e => this.onSubscriptionErr(e)
-    );
+    this.channel.subscribe(app, path, {
+      mark: "json",
+      onError: (e: any) => this.onSubscriptionErr(e),
+      onEvent: (u: any) => this.onSubscriptionUpdate(u),
+      onQuit: (e: any) => this.onSubscriptionErr(e)
+    });
     new Promise(() => this.connection.listen());
   }
 
@@ -112,23 +105,22 @@ class Server {
   onNotification(method: string, params: any[]) {
     logger.debug({ method, params });
     if (method === "textDocument/didSave") {
-      wait(this.config.delay).then(() => {
+      wait(this.delay).then(() => {
         logger.debug("Delayed didSave");
-        this.poke(MARKS.NOTIFICATION, { jsonrpc: "2.0", method, params });
+        this.pokeNotification({ jsonrpc: "2.0", method, params });
       });
     }
-    this.poke(MARKS.NOTIFICATION, { jsonrpc: "2.0", method, params });
+    this.pokeNotification({ jsonrpc: "2.0", method, params });
   }
 
   onRequest(method: string, params: any[]) {
     const id = uniqueId();
-    logger.debug({ method });
 
     if (method === "initialize") {
       return this.initialise();
     } else {
       logger.info({ message: `caught request`, id });
-      this.poke(MARKS.REQUEST, { jsonrpc: "2.0", method, params, id });
+      this.pokeRequest({ jsonrpc: "2.0", method, params, id });
       return this.waitOnResponse(id).then(r => {
         logger.info({ message: `returning request`, id, r });
         return r;
@@ -142,12 +134,12 @@ class Server {
     });
   }
 
-  poke(mark: MARKS, message: NotificationMessage | RequestMessage) {
-    return new Promise((resolve, reject) =>
-      this.channel.poke(ship, app, mark, message, resolve, reject)
-    ).catch(e => {
-      logger.warn("Failed to poke", { error: e });
-    });
+  pokeRequest(message: RequestMessage) {
+    return this.channel.poke(app, { mark: REQUEST_MARK, data: message });
+  }
+
+  pokeNotification(message: NotificationMessage) {
+    return this.channel.poke(app, { mark: NOTIFICATION_MARK, data: message });
   }
 
   // Subscriptions
@@ -176,36 +168,40 @@ class Server {
   }
 }
 
-let data = { password: "lidlut-tabwed-pillex-ridrup" };
+(async function main() {
+  const { ship, url, code: password, port, delay }: Config = yargs.options({
+    port: {
+      alias: "p",
+      default: 80,
+      description: "HTTP port of the running urbit"
+    },
+    delay: {
+      alias: "d",
+      default: 0,
+      description: "Delay for running didSave events"
+    },
+    url: {
+      alias: "u",
+      default: "http://localhost",
+      description: "URL of the running urbit"
+    },
+    ship: {
+      alias: "s",
+      default: "zod",
+      description: "@p of the running urbit, without leading sig"
+    },
+    code: {
+      alias: "c",
+      default: "lidlut-tabwed-pillex-ridrup",
+      description: "+code of the running urbit"
+    }
+  }).argv;
 
-const config: Config = yargs.options({
-  port: {
-    alias: "p",
-    default: 8080,
-    description: "HTTP port of the running urbit"
-  },
-  delay: {
-    alias: "d",
-    default: 0
-  }
-}).argv;
+  const connection = await connect(ship, url, port, password);
 
-request(
-  url + "/~/login",
-  { method: "post", port: config.port },
-  qs.stringify(data)
-).then(({ res }) => {
-  logger.info({
-    message: "Got cookie",
-    cookie: res.headers["set-cookie"] || "no-cookie"
-  });
-  const channel = new Channel(
-    res.headers["set-cookie"] || [],
-    url,
-    logger,
-    config
-  );
-  const server = new Server(channel, config);
+  const channel = new Channel(connection);
+
+  const server = new Server(channel, delay);
 
   server.serve();
-});
+})();
