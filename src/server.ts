@@ -1,12 +1,14 @@
+import { REQUEST_MARK, RESPONSE_MARK, NOTIFICATION_MARK } from "./marks";
 import * as rpc from "vscode-jsonrpc";
 import { NotificationMessage, RequestMessage } from "vscode-languageserver";
-import * as pino from "pino";
+import pino from "pino";
 import { uniqueId } from "lodash";
 import * as qs from "querystring";
 import * as yargs from "yargs";
+import { Channel } from "urbit-airlock/lib/channel";
+import { connect } from "urbit-airlock/lib/setup";
 
 import { wait, request, Config } from "./util";
-import Channel from "./channel";
 
 const logger = pino(
   { level: "trace" },
@@ -16,12 +18,6 @@ const url = "http://localhost";
 const app = "language-server";
 const path = "/primary";
 const ship = "zod";
-
-enum MARKS {
-  REQUEST = "language-server-rpc-request",
-  NOTIFICATION = "language-server-rpc-notification",
-  RESPONSE = "language-server-rpc-response"
-}
 
 interface RequestContinuation {
   (result: any): void;
@@ -96,14 +92,12 @@ class Server {
   serve() {
     // const onUpdate =
     // const onError = this.onSubscriptionErr.bind(this);
-    this.channel.subscribe(
-      ship,
-      app,
-      path,
-      e => this.onSubscriptionErr(e),
-      u => this.onSubscriptionUpdate(u),
-      e => this.onSubscriptionErr(e)
-    );
+    this.channel.subscribe(app, path, {
+      mark: "json",
+      onError: (e: any) => this.onSubscriptionErr(e),
+      onEvent: (u: any) => this.onSubscriptionUpdate(u),
+      onQuit: (e: any) => this.onSubscriptionErr(e)
+    });
     new Promise(() => this.connection.listen());
   }
 
@@ -114,10 +108,10 @@ class Server {
     if (method === "textDocument/didSave") {
       wait(this.config.delay).then(() => {
         logger.debug("Delayed didSave");
-        this.poke(MARKS.NOTIFICATION, { jsonrpc: "2.0", method, params });
+        this.pokeNotification({ jsonrpc: "2.0", method, params });
       });
     }
-    this.poke(MARKS.NOTIFICATION, { jsonrpc: "2.0", method, params });
+    this.pokeNotification({ jsonrpc: "2.0", method, params });
   }
 
   onRequest(method: string, params: any[]) {
@@ -128,7 +122,7 @@ class Server {
       return this.initialise();
     } else {
       logger.info({ message: `caught request`, id });
-      this.poke(MARKS.REQUEST, { jsonrpc: "2.0", method, params, id });
+      this.pokeRequest({ jsonrpc: "2.0", method, params, id });
       return this.waitOnResponse(id).then(r => {
         logger.info({ message: `returning request`, id, r });
         return r;
@@ -142,12 +136,12 @@ class Server {
     });
   }
 
-  poke(mark: MARKS, message: NotificationMessage | RequestMessage) {
-    return new Promise((resolve, reject) =>
-      this.channel.poke(ship, app, mark, message, resolve, reject)
-    ).catch(e => {
-      logger.warn("Failed to poke", { error: e });
-    });
+  pokeRequest(message: RequestMessage) {
+    return this.channel.poke(app, { mark: REQUEST_MARK, data: message });
+  }
+
+  pokeNotification(message: NotificationMessage) {
+    return this.channel.poke(app, { mark: NOTIFICATION_MARK, data: message });
   }
 
   // Subscriptions
@@ -176,12 +170,12 @@ class Server {
   }
 }
 
-let data = { password: "lidlut-tabwed-pillex-ridrup" };
+let password = "lidlut-tabwed-pillex-ridrup";
 
-const config: Config = yargs.options({
+const _config: Config = yargs.options({
   port: {
     alias: "p",
-    default: 8080,
+    default: 80,
     description: "HTTP port of the running urbit"
   },
   delay: {
@@ -190,22 +184,14 @@ const config: Config = yargs.options({
   }
 }).argv;
 
-request(
-  url + "/~/login",
-  { method: "post", port: config.port },
-  qs.stringify(data)
-).then(({ res }) => {
-  logger.info({
-    message: "Got cookie",
-    cookie: res.headers["set-cookie"] || "no-cookie"
-  });
-  const channel = new Channel(
-    res.headers["set-cookie"] || [],
-    url,
-    logger,
-    config
-  );
+(async function main() {
+  const connection = await connect(ship, url, 80, password);
+
+  const channel = new Channel(connection);
+
+  const config = { port: 80, delay: 500 };
+
   const server = new Server(channel, config);
 
   server.serve();
-});
+})();
