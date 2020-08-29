@@ -24,7 +24,8 @@
 	},
 	"scripts": {
 		"build": "tsc",
-		"watch": "tsc --watch"
+		"watch": "tsc --watch",
+		"postinstall": "tsc"
 	},
 	"devDependencies": {
 		"@types/eventsource": "^1.1.2",
