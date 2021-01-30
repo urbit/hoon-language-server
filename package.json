@@ -1,5 +1,5 @@
 {
-	"name": "hoon-language-server",
+	"name": "@urbit/hoon-language-server",
 	"description": "LSP bridge for Hoon.",
 	"version": "0.1.0",
 	"author": "Tlon Corporation",
@@ -27,7 +27,7 @@
 		"watch": "tsc --watch"
 	},
 	"devDependencies": {
-		"@types/eventsource": "^1.1.2",
+		"@types/eventsource": "^1.1.5",
 		"@types/lodash": "^4.14.149",
 		"@types/node": "^13.1.1",
 		"@types/pino": "^5.15.1",
