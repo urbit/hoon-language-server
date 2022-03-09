@@ -15,23 +15,21 @@
 		"hoon-language-server": "./bin/index.js"
 	},
 	"dependencies": {
-		"eventsource": "^1.0.7",
-		"lodash": "^4.17.15",
-		"pino": "^5.15.0",
-		"urbit-airlock": "0.0.2",
-		"vscode-languageserver": "^5.2.1",
-		"yargs": "^15.1.0"
-	},
-	"scripts": {
-		"build": "tsc",
-		"watch": "tsc --watch"
-	},
-	"devDependencies": {
 		"@types/eventsource": "^1.1.5",
 		"@types/lodash": "^4.14.149",
 		"@types/node": "^13.1.1",
-		"@types/pino": "^5.15.1",
 		"@types/yargs": "^15.0.0",
-		"typescript": "^3.8.3"
+		"eventsource": "^1.0.7",
+		"lodash": "^4.17.21",
+		"pino": "^7.8.0",
+		"typescript": "^3.8.3",
+		"urbit-airlock": "0.0.2",
+		"vscode-languageserver": "^5.2.1",
+		"yargs": "^17.3.1"
+	},
+	"scripts": {
+		"postinstall": "npm run build",
+		"build": "tsc",
+		"watch": "tsc --watch"
 	}
 }
