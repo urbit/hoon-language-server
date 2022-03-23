@@ -14,7 +14,6 @@
 	"bin": {
 		"hoon-language-server": "./bin/index.js"
 	},
-	"main": "out/server.js",
 	"dependencies": {
 		"eventsource": "^1.0.7",
 		"lodash": "^4.17.15",
