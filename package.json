@@ -14,6 +14,7 @@
 	"bin": {
 		"hoon-language-server": "./bin/index.js"
 	},
+	"main": "out/index.js",
 	"dependencies": {
 		"eventsource": "^1.0.7",
 		"lodash": "^4.17.15",
@@ -23,6 +24,7 @@
 		"yargs": "^15.1.0"
 	},
 	"scripts": {
+	  "prepare": "npm run build",
 		"build": "tsc",
 		"watch": "tsc --watch"
 	},
