@@ -11,8 +11,7 @@ import { connect } from "urbit-airlock/lib/setup";
 import { wait, request, Config } from "./util";
 
 const logger = pino(
-  { level: "trace" },
-  pino.destination("/tmp/hoon-language-server.log")
+  { level: "trace" }
 );
 
 interface RequestContinuation {
