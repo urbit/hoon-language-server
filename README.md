@@ -1,3 +1,5 @@
+# hoon-language-server
+
 Earth-side component of a language server for Hoon. Enables two-way communication between supported text editors and the `language-server` agent on an urbit ship.
 ## Installation
 ### npm
