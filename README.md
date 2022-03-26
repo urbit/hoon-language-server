@@ -1,24 +1,29 @@
-A language server for Hoon.
-
-Install with:
-
-```
+Earth-side component of a language server for Hoon. Enables two-way communication between supported text editors and the `language-server` agent on an urbit ship.
+## Installation
+### npm
+```bash
 npm install -g @urbit/hoon-language-server
 ```
+### nix
+```nix
+nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix {}'
+nix-env -i ./result
+```
 
-This installs `hoon-language-server` which allows your code editor to communicate with an urbit ship running locally on your development machine.
+## Running
 
-The default options are: `-p 80 -d 0 -u http://localhost -s zod -c lidlut-tabwed-pillex-ridrup`
+`hoon-language-server -p 80 -d 0 -u http://localhost -s zod -c lidlut-tabwed-pillex-ridrup`
 
-- `-p` is the port your ship is accessible on over HTTP
-- `-d` is the delay for running didSave events
-- `-u` is the URL of your ship
-- `-s` is the `@p` of your ship (without a sig)
-- `-c` is the `+code` of the running urbit (also without a sig)
+### Configuration
+- `-p`: HTTP port of your (running) ship
+- `-d`: `didSave` event delay
+- `-u`: ship url
+- `-s`: `@p` of ship (without a sig)
+- `-c`: `+code` of ship (without a sig)
 
 ## Urbit Setup
 
-You must have a fake ship running and it must be running the hoon language server.  To create and start a fake `~zod`:
+You must have an urbit ship running (can be a livenet ship) with the `language-server` agent started.  To create and start a fake `~zod`:
 
 ```
 urbit -F zod -c zod
@@ -27,13 +32,13 @@ urbit -F zod -c zod
 In the urbit dojo, start the language server:
 
 ```
-|start %language-server
+dojo> |start %language-server
 ```
 
-If you need the passcode for your ship, enter this in dojo:
+get the `+code`
 
 ```
-+code
+dojo> +code
 ```
 
 To start the same ship again in the future just run:
@@ -42,12 +47,11 @@ To start the same ship again in the future just run:
 urbit zod
 ```
 
-in the same directory you created it in.
+in the same directory it was created in.
 
 ## Editor Setup
 
-Your code editor now needs to use `hoon-language-server` as an LSP provider.  There are plugins for common editors that add syntax highlighting, etc. and help connect to the language server.
-
+Your code editor now needs to use `hoon-language-server` as an LSP provider. Supported plugins:
 ### VSCode
 
  * [hoon-vscode](https://github.com/famousj/hoon-vscode)
