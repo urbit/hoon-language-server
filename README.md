@@ -67,7 +67,7 @@ Your code editor now needs to use `hoon-language-server` as an LSP provider. Sup
 
  * [hoon.vim](https://github.com/urbit/hoon.vim)
 
-`hoon.vim` does not use the language server itself, but the github page describes a setup using `vim-lsp`.
+`hoon.vim` does not use the language server itself, but the github page describes a setup using [vim-lsp](https://github.com/prabirshrestha/vim-lsp).
 
 ### Neovim
 
@@ -75,7 +75,7 @@ Neovim users should use [hoon.vim](https://github.com/urbit/hoon.vim) with one o
 
 #### Native LSP
 
-Install [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) to simplify your local configuration.  To use the [default configuration](https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.txt#hoon_ls), add the following to `init.lua`:
+Install [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig).  To use the [default configuration](https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.txt#hoon_ls), add the following to `init.lua`:
 
 ```
 require'lspconfig'.hoon_ls.setup{}
@@ -85,7 +85,7 @@ To modify the default options use:
 
 ```
 require'lspconfig'.hoon_ls.setup{
-  cmd = {"hoon-language-server" "-p", "80", "-d", "500", -s "zod", "-u", "http://localhost", "-c" "lidlut-tabwed-pillex-ridrup"}
+  cmd = {"hoon-language-server", "-p", "8080"}
 }
 ```
 
