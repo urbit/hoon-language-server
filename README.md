@@ -99,30 +99,6 @@ require'lspconfig'.hoon_ls.setup{}
 EOF
 ```
 
-Alternatively, configure native LSP manually without additional plugins:
-
-```
--- Only `configs` must be required, util is optional if you are using the root resolver functions, which is usually the case.
-local configs = require ('lspconfig.configs')
-local util = require ('lspconfig.util')
-
-configs['hoon_ls'] = {
-  default_config = {
-    cmd = { 'hoon-language-server', "-p", "8080" },
-    filetypes = { 'hoon' },
-    single_file_support = true,
-    root_dir = function(fname)
-      return util.find_git_ancestor() or vim.loop.os_homedir()
-    end,
-  },
-  docs = {
-    description = [[
-      https://github.com/urbit/hoon-language-server
-    ]],
-  },
-}
-```
-
 #### coc.nvim
 
 Install and configure [coc.nvim](https://github.com/neoclide/coc.nvim), then add a `languageserver` entry to `~/.config/nvim/coc-settings.json`:
