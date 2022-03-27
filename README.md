@@ -85,9 +85,7 @@ To modify the default options use:
 
 ```
 require'lspconfig'.hoon_ls.setup{
-  cmd = {"hoon-language-server" "-p", "80", "-d", "500", -s "zod", "-u", "http://localhost", "-c" "lidlut-tabwed-pillex-ridrup"},
-  filetypes = {"hoon"},
-  single_file_support = true
+  cmd = {"hoon-language-server" "-p", "80", "-d", "500", -s "zod", "-u", "http://localhost", "-c" "lidlut-tabwed-pillex-ridrup"}
 }
 ```
 
