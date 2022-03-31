@@ -1,12 +1,16 @@
 {
   "name": "hoon-language-server",
   "description": "LSP bridge for Hoon.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Tlon Corporation",
   "license": "MIT",
   "engines": {
     "node": "*"
   },
+  "files": [
+    "bin/**",
+    "out/**"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/urbit/hoon-language-server.git"
