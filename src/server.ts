@@ -11,7 +11,7 @@ import { connect } from "urbit-airlock/lib/setup";
 import { wait, request, Config } from "./util";
 
 const logger = pino(
-  { level: "trace" }
+  { level: "info" }
 );
 
 interface RequestContinuation {
@@ -26,12 +26,12 @@ class Server {
   subscription: number | null = null;
   outstandingRequests: Map<string, RequestContinuation> = new Map();
   constructor(private channel: Channel, private delay: number) {
+    logger.info('constructor');
     this.connection = rpc.createMessageConnection(
       new rpc.StreamMessageReader(process.stdin),
       new rpc.StreamMessageWriter(process.stdout)
     );
-    // this.connection.trace(rpc.Trace.Messages, tracer);
-
+    
     this.connection.onNotification((method, params) =>
       this.onNotification(method, params)
     );
@@ -90,6 +90,8 @@ class Server {
   serve() {
     // const onUpdate =
     // const onError = this.onSubscriptionErr.bind(this);
+    
+    logger.info('started');
     this.channel.subscribe(app, path, {
       mark: "json",
       onError: (e: any) => this.onSubscriptionErr(e),
@@ -102,7 +104,6 @@ class Server {
   // handlers
 
   onNotification(method: string, params: any[]) {
-    logger.debug({ method, params });
     if (method === "textDocument/didSave") {
       wait(this.delay).then(() => {
         logger.debug("Delayed didSave");
@@ -113,6 +114,7 @@ class Server {
   }
 
   onRequest(method: string, params: any[]) {
+    logger.info({ message: `caught request`, method });
     const id = uniqueId();
 
     if (method === "initialize") {

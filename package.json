@@ -1,35 +1,40 @@
 {
-	"name": "@urbit/hoon-language-server",
-	"description": "LSP bridge for Hoon.",
-	"version": "0.1.0",
-	"author": "Tlon Corporation",
-	"license": "MIT",
-	"engines": {
-		"node": "*"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/urbit/hoon-language-server"
-	},
-	"bin": {
-		"hoon-language-server": "./bin/index.js"
-	},
-	"dependencies": {
-		"@types/eventsource": "^1.1.5",
-		"@types/lodash": "^4.14.149",
-		"@types/node": "^13.1.1",
-		"@types/yargs": "^15.0.0",
-		"eventsource": "^1.0.7",
-		"lodash": "^4.17.21",
-		"pino": "^7.8.0",
-		"typescript": "^3.8.3",
-		"urbit-airlock": "0.0.2",
-		"vscode-languageserver": "^5.2.1",
-		"yargs": "^17.3.1"
-	},
-	"scripts": {
-		"postinstall": "npm run build",
-		"build": "tsc",
-		"watch": "tsc --watch"
-	}
+  "name": "hoon-language-server",
+  "description": "LSP bridge for Hoon.",
+  "version": "0.1.0",
+  "author": "Tlon Corporation",
+  "license": "MIT",
+  "engines": {
+    "node": "*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/urbit/hoon-language-server.git"
+  },
+  "bin": {
+    "hoon-language-server": "bin/index.js"
+  },
+  "dependencies": {
+    "@types/eventsource": "^1.1.5",
+    "@types/lodash": "^4.14.149",
+    "@types/node": "^13.1.1",
+    "@types/yargs": "^15.0.0",
+    "eventsource": "^1.0.7",
+    "lodash": "^4.17.21",
+    "pino": "^7.8.0",
+    "typescript": "^3.8.3",
+    "urbit-airlock": "0.0.2",
+    "vscode-languageserver": "^5.2.1",
+    "yargs": "^17.3.1"
+  },
+  "scripts": {
+    "prepare": "npm run build",
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "bugs": {
+    "url": "https://github.com/urbit/hoon-language-server/issues"
+  },
+  "homepage": "https://github.com/urbit/hoon-language-server#readme",
+  "main": "index.js"
 }
