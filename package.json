@@ -7,6 +7,10 @@
   "engines": {
     "node": "*"
   },
+  "files": [
+    "bin/**",
+    "out/**"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/urbit/hoon-language-server.git"
@@ -14,10 +18,6 @@
   "bin": {
     "hoon-language-server": "bin/index.js"
   },
-  "files": [
-    "bin/**",
-    "out/**"
-  ],
   "dependencies": {
     "@types/eventsource": "^1.1.5",
     "@types/lodash": "^4.14.149",

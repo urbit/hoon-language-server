@@ -11,7 +11,7 @@ import { connect } from "urbit-airlock/lib/setup";
 import { wait, request, Config } from "./util";
 
 const logger = pino(
-  { level: "info" }
+  pino.destination("/tmp/hoon-language-server.log")
 );
 
 interface RequestContinuation {
@@ -26,7 +26,6 @@ class Server {
   subscription: number | null = null;
   outstandingRequests: Map<string, RequestContinuation> = new Map();
   constructor(private channel: Channel, private delay: number) {
-    logger.info('constructor');
     this.connection = rpc.createMessageConnection(
       new rpc.StreamMessageReader(process.stdin),
       new rpc.StreamMessageWriter(process.stdout)
@@ -91,14 +90,16 @@ class Server {
     // const onUpdate =
     // const onError = this.onSubscriptionErr.bind(this);
     
-    logger.info('started');
     this.channel.subscribe(app, path, {
       mark: "json",
       onError: (e: any) => this.onSubscriptionErr(e),
       onEvent: (u: any) => this.onSubscriptionUpdate(u),
       onQuit: (e: any) => this.onSubscriptionErr(e)
     });
-    new Promise(() => this.connection.listen());
+    new Promise(() => this.connection.listen()).catch(e => {
+      logger.error({ message: `error somewhere`, e });
+      
+    });
   }
 
   // handlers
@@ -114,7 +115,6 @@ class Server {
   }
 
   onRequest(method: string, params: any[]) {
-    logger.info({ message: `caught request`, method });
     const id = uniqueId();
 
     if (method === "initialize") {
@@ -123,8 +123,9 @@ class Server {
       logger.info({ message: `caught request`, id });
       this.pokeRequest({ jsonrpc: "2.0", method, params, id });
       return this.waitOnResponse(id).then(r => {
-        logger.info({ message: `returning request`, id, r });
         return r;
+      }).catch(e => {
+        logger.error({ message: `error on request`, id, e });
       });
     }
   }
@@ -132,6 +133,8 @@ class Server {
   waitOnResponse(id: string) {
     return new Promise((resolve, reject) => {
       this.outstandingRequests.set(id, resolve);
+    }).catch(e => {
+      logger.error({ message: "waitOnResponse", e });
     });
   }
 
