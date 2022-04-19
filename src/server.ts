@@ -177,7 +177,8 @@ class Server {
     port: {
       alias: "p",
       default: 80,
-      description: "HTTP port of the running urbit"
+      description: "HTTP port of the running urbit",
+      type: "number"
     },
     delay: {
       alias: "d",
