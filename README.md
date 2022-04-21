@@ -7,13 +7,14 @@ Earth-side component of a language server for Hoon. Enables two-way communicatio
 npm install -g @urbit/hoon-language-server
 ```
 ### nix
-```nix
+```bash
 nix-build -E 'with import <nixpkgs> {}; callPackage ./default.nix {}'
 nix-env -i ./result
 ```
 
 ## Running
-
+> **_NOTE:_**  Usually your editor will handle this, you just need to set the correct parameters in your editor configuration.
+> 
 `hoon-language-server -p 80 -d 0 -u http://localhost -s zod -c lidlut-tabwed-pillex-ridrup`
 
 ### Configuration
