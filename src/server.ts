@@ -111,7 +111,9 @@ class Server {
         this.pokeNotification({ jsonrpc: "2.0", method, params });
       });
     }
-    this.pokeNotification({ jsonrpc: "2.0", method, params });
+    this.pokeNotification({ jsonrpc: "2.0", method, params }).catch(e => {
+      logger.error({ message: "onNotification", e });
+    });
   }
 
   onRequest(method: string, params: any[]) {
@@ -121,7 +123,9 @@ class Server {
       return this.initialise();
     } else {
       logger.info({ message: `caught request`, id });
-      this.pokeRequest({ jsonrpc: "2.0", method, params, id });
+      this.pokeRequest({ jsonrpc: "2.0", method, params, id }).catch(e => {
+        logger.error({ message: "onRequest", e });
+      });
       return this.waitOnResponse(id).then(r => {
         return r;
       }).catch(e => {
@@ -139,11 +143,15 @@ class Server {
   }
 
   pokeRequest(message: RequestMessage) {
-    return this.channel.poke(app, { mark: REQUEST_MARK, data: message });
+    return this.channel.poke(app, { mark: REQUEST_MARK, data: message }).catch((e: any) => {
+      logger.error({ message: "pokeRequest", e });
+    });
   }
 
+
   pokeNotification(message: NotificationMessage) {
-    return this.channel.poke(app, { mark: NOTIFICATION_MARK, data: message });
+    return this.channel.poke(app, { mark: NOTIFICATION_MARK, data: message })
+      .catch(e => {  logger.error({ message: "pokeNotification", e }); });
   }
 
   // Subscriptions

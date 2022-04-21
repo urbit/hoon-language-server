@@ -9,7 +9,7 @@
 
 stdenv.mkDerivation rec {
   pname = "hoon-language-server";
-  version = "0.1.1";
+  version = "0.1.2";
 
   nativeBuildInputs = [
     nodejs
@@ -29,7 +29,7 @@ stdenv.mkDerivation rec {
     in
     ''
       runHook preBuild
-
+      rm -rf node_modules
       ln -s ${nodeDependencies}/lib/node_modules .
       export PATH="${nodeDependencies}/bin:$PATH"
       npm run build
