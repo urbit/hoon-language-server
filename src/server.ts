@@ -11,7 +11,7 @@ import { connect } from "urbit-airlock/lib/setup";
 import { wait, request, Config } from "./util";
 
 const logger = pino(
-  { level: "trace" }
+  pino.destination("/tmp/hoon-language-server.log")
 );
 
 interface RequestContinuation {
@@ -30,8 +30,7 @@ class Server {
       new rpc.StreamMessageReader(process.stdin),
       new rpc.StreamMessageWriter(process.stdout)
     );
-    // this.connection.trace(rpc.Trace.Messages, tracer);
-
+    
     this.connection.onNotification((method, params) =>
       this.onNotification(method, params)
     );
@@ -90,26 +89,31 @@ class Server {
   serve() {
     // const onUpdate =
     // const onError = this.onSubscriptionErr.bind(this);
+    
     this.channel.subscribe(app, path, {
       mark: "json",
       onError: (e: any) => this.onSubscriptionErr(e),
       onEvent: (u: any) => this.onSubscriptionUpdate(u),
       onQuit: (e: any) => this.onSubscriptionErr(e)
     });
-    new Promise(() => this.connection.listen());
+    new Promise(() => this.connection.listen()).catch(e => {
+      logger.error({ message: `error somewhere`, e });
+      
+    });
   }
 
   // handlers
 
   onNotification(method: string, params: any[]) {
-    logger.debug({ method, params });
     if (method === "textDocument/didSave") {
       wait(this.delay).then(() => {
         logger.debug("Delayed didSave");
         this.pokeNotification({ jsonrpc: "2.0", method, params });
       });
     }
-    this.pokeNotification({ jsonrpc: "2.0", method, params });
+    this.pokeNotification({ jsonrpc: "2.0", method, params }).catch(e => {
+      logger.error({ message: "onNotification", e });
+    });
   }
 
   onRequest(method: string, params: any[]) {
@@ -119,10 +123,13 @@ class Server {
       return this.initialise();
     } else {
       logger.info({ message: `caught request`, id });
-      this.pokeRequest({ jsonrpc: "2.0", method, params, id });
+      this.pokeRequest({ jsonrpc: "2.0", method, params, id }).catch(e => {
+        logger.error({ message: "onRequest", e });
+      });
       return this.waitOnResponse(id).then(r => {
-        logger.info({ message: `returning request`, id, r });
         return r;
+      }).catch(e => {
+        logger.error({ message: `error on request`, id, e });
       });
     }
   }
@@ -130,15 +137,21 @@ class Server {
   waitOnResponse(id: string) {
     return new Promise((resolve, reject) => {
       this.outstandingRequests.set(id, resolve);
+    }).catch(e => {
+      logger.error({ message: "waitOnResponse", e });
     });
   }
 
   pokeRequest(message: RequestMessage) {
-    return this.channel.poke(app, { mark: REQUEST_MARK, data: message });
+    return this.channel.poke(app, { mark: REQUEST_MARK, data: message }).catch((e: any) => {
+      logger.error({ message: "pokeRequest", e });
+    });
   }
 
+
   pokeNotification(message: NotificationMessage) {
-    return this.channel.poke(app, { mark: NOTIFICATION_MARK, data: message });
+    return this.channel.poke(app, { mark: NOTIFICATION_MARK, data: message })
+      .catch(e => {  logger.error({ message: "pokeNotification", e }); });
   }
 
   // Subscriptions
@@ -172,7 +185,8 @@ class Server {
     port: {
       alias: "p",
       default: 80,
-      description: "HTTP port of the running urbit"
+      description: "HTTP port of the running urbit",
+      type: "number"
     },
     delay: {
       alias: "d",

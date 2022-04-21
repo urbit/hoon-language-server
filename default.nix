@@ -9,7 +9,7 @@
 
 stdenv.mkDerivation rec {
   pname = "hoon-language-server";
-  version = "1.1.0";
+  version = "0.1.2";
 
   nativeBuildInputs = [
     nodejs
@@ -29,7 +29,7 @@ stdenv.mkDerivation rec {
     in
     ''
       runHook preBuild
-
+      rm -rf node_modules
       ln -s ${nodeDependencies}/lib/node_modules .
       export PATH="${nodeDependencies}/bin:$PATH"
       npm run build
@@ -44,7 +44,7 @@ stdenv.mkDerivation rec {
     cp -a . $out/share/hoon-language-server
 
     makeWrapper ${nodejs}/bin/node $out/bin/hoon-language-server \
-      --add-flags $out/share/hoon-language-server/out/index.js
+      --add-flags $out/share/hoon-language-server/out/server.js
 
     runHook postInstall
   '';
