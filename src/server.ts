@@ -5,13 +5,14 @@ import pino from "pino";
 import { uniqueId } from "lodash";
 import * as qs from "querystring";
 import * as yargs from "yargs";
+import { tmpdir } from os;
 import { Channel } from "urbit-airlock/lib/channel";
 import { connect } from "urbit-airlock/lib/setup";
 
 import { wait, request, Config } from "./util";
 
 const logger = pino(
-  pino.destination("/tmp/hoon-language-server.log")
+  pino.destination(tmpdir()+"/hoon-language-server.log")
 );
 
 interface RequestContinuation {
