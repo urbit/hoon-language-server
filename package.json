@@ -23,7 +23,7 @@
     "@types/lodash": "^4.14.149",
     "@types/node": "^13.1.1",
     "@types/yargs": "^15.0.0",
-    "eventsource": "^1.0.7",
+    "eventsource": "^2.0.2",
     "lodash": "^4.17.21",
     "pino": "^7.8.0",
     "typescript": "^3.8.3",
