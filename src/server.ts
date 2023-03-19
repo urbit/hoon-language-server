@@ -5,7 +5,7 @@ import pino from "pino";
 import { uniqueId } from "lodash";
 import * as qs from "querystring";
 import * as yargs from "yargs";
-import { tmpdir } from os;
+import { tmpdir } from "os";
 import { Channel } from "urbit-airlock/lib/channel";
 import { connect } from "urbit-airlock/lib/setup";
 
